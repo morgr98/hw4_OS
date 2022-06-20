@@ -59,17 +59,30 @@ void* smalloc(size_t size)
         return NULL;
 
     MallocMetadata* last_alloced_block = NULL;
-    MallocMetadata* block_to_use = findFreeBlock(size, &last_alloced_block);
-    if(block_to_use == NULL)
-    {
-        block_to_use = addBlock(last_alloced_block, size);
+    FreeNode* last_free_block = NULL;
+    FreeNode* reuse_block = findFreeBlockBySize(size, &last_free_block);
+    if(reuse_block == NULL){
+           MallocMetadata* block_to_use = findFreeBlock(size, &last_alloced_block);
+           block_to_use = addBlock(last_alloced_block, size);
+        return (void*)(block_to_use+1); // not found empty space = add block and return
     }
-    else {
-        block_to_use->is_free = false;
-        global_num_free_blocks--;
-        global_num_free_bytes -= block_to_use->size;
+    else {// found empty space
+        if(reuse_block->meta_data->size - 128 < size) // cant make split
+        {
+            global_num_free_blocks--;
+            global_num_free_bytes-= reuse_block->meta_data->size;
+            MallocMetadata* block_to_use = reuse_block->meta_data;
+            block_to_use->is_free = false;
+            removeFromFreeList(reuse_block);
+            return (void*)(block_to_use +1);
+        }
+        else // split
+        {
+            MallocMetadata* block_to_use = splitBlocks(reuse_block , size);
+            return (void*)(block_to_use +1);
+        }
     }
-    return (void*)(block_to_use+1);
+
 }
 
 void* scalloc(size_t num, size_t size)
