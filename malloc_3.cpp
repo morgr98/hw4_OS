@@ -142,7 +142,7 @@ static void insertFreeNode(MallocMetadata* freed_block)
     if (node_to_insert_after == NULL)
     {
        // freenode->next = free_list;
-        free_list = freenode;
+        free_list = freenode ;
         return;
     }
     node_to_insert_after->next = freenode;
