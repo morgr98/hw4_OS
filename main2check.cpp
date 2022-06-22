@@ -1,6 +1,6 @@
 
 #include <iostream>
-#include "malloc_2.cpp"
+#include "malloc_3.cpp"
 
 
 /*
@@ -37,17 +37,20 @@ void print(void) {
 
 
 void test1() {
-    void* p1 = smalloc(10);
-    void* p2 = smalloc(20);
-    void* p3 = smalloc(30);
-    void* p4 = smalloc(40);
-    void* p5;
-    sfree(p5);
-    print();
-    sfree(p4);
-    sfree(p3);
+    std::cout << "test" << std::endl;
+    void* p1 = smalloc(100);
+    void* p2 = smalloc(200);
+    void* p3 = smalloc(300);
+   // void* p4 = smalloc(40);
+   // void* p5;
+   // sfree(p5);
+   // print();
     sfree(p2);
-    sfree(p1);
+    void* p4 = smalloc(40);
+    void* p5 = smalloc(200);
+    sfree(p3);
+  //  sfree(p2);
+  //  sfree(p1);
     print();
 }
 
