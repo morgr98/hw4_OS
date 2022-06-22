@@ -49,8 +49,8 @@ cmake_ninja_workdir = /home/student/CLionProjects/hw4_OS/cmake-build-debug/
 
 build cmake_object_order_depends_target_hw4_OS: phony || CMakeFiles/hw4_OS.dir
 
-build CMakeFiles/hw4_OS.dir/malloc_1.cpp.o: CXX_COMPILER__hw4_OS_Debug /home/student/CLionProjects/hw4_OS/malloc_1.cpp || cmake_object_order_depends_target_hw4_OS
-  DEP_FILE = CMakeFiles/hw4_OS.dir/malloc_1.cpp.o.d
+build CMakeFiles/hw4_OS.dir/main2check.cpp.o: CXX_COMPILER__hw4_OS_Debug /home/student/CLionProjects/hw4_OS/main2check.cpp || cmake_object_order_depends_target_hw4_OS
+  DEP_FILE = CMakeFiles/hw4_OS.dir/main2check.cpp.o.d
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/hw4_OS.dir
   OBJECT_FILE_DIR = CMakeFiles/hw4_OS.dir
@@ -65,7 +65,7 @@ build CMakeFiles/hw4_OS.dir/malloc_1.cpp.o: CXX_COMPILER__hw4_OS_Debug /home/stu
 #############################################
 # Link the executable hw4_OS
 
-build hw4_OS: CXX_EXECUTABLE_LINKER__hw4_OS_Debug CMakeFiles/hw4_OS.dir/malloc_1.cpp.o
+build hw4_OS: CXX_EXECUTABLE_LINKER__hw4_OS_Debug CMakeFiles/hw4_OS.dir/main2check.cpp.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/hw4_OS.dir
   POST_BUILD = :
