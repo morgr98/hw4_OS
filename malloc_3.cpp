@@ -133,7 +133,7 @@ static MallocMetadata* mergeBlocks(MallocMetadata* freed_block)
 
 static void insertFreeNode(MallocMetadata* freed_block)
 {
-    FreeNode* freenode = &freed_block->free_node ;
+    FreeNode* freenode = &freed_block->free_node;
 
     freenode->meta_data = freed_block;
 
