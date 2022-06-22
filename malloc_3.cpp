@@ -83,7 +83,7 @@ static void removeFromFreeList(FreeNode* node_to_remove) {
     if (node_to_remove == free_list)
     {
         free_list = free_list->next;
-        free_list->prev = NULLb ;
+        free_list->prev = NULL;
         return;
     }
     if (node_to_remove->prev!=NULL)
