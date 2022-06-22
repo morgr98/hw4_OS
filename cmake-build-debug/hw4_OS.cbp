@@ -84,7 +84,7 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/student/CLionProjects/hw4_OS/main3test.cpp">
+		<Unit filename="/home/student/CLionProjects/hw4_OS/main2check.cpp">
 			<Option target="hw4_OS"/>
 		</Unit>
 		<Unit filename="/home/student/CLionProjects/hw4_OS/CMakeLists.txt">

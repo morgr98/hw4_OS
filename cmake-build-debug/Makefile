@@ -129,29 +129,29 @@ hw4_OS/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/build
 .PHONY : hw4_OS/fast
 
-main3test.o: main3test.cpp.o
-.PHONY : main3test.o
+main2check.o: main2check.cpp.o
+.PHONY : main2check.o
 
 # target to build an object file
-main3test.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main3test.cpp.o
-.PHONY : main3test.cpp.o
+main2check.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main2check.cpp.o
+.PHONY : main2check.cpp.o
 
-main3test.i: main3test.cpp.i
-.PHONY : main3test.i
+main2check.i: main2check.cpp.i
+.PHONY : main2check.i
 
 # target to preprocess a source file
-main3test.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main3test.cpp.i
-.PHONY : main3test.cpp.i
+main2check.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main2check.cpp.i
+.PHONY : main2check.cpp.i
 
-main3test.s: main3test.cpp.s
-.PHONY : main3test.s
+main2check.s: main2check.cpp.s
+.PHONY : main2check.s
 
 # target to generate assembly for a file
-main3test.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main3test.cpp.s
-.PHONY : main3test.cpp.s
+main2check.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main2check.cpp.s
+.PHONY : main2check.cpp.s
 
 # Help Target
 help:
@@ -162,9 +162,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... hw4_OS"
-	@echo "... main3test.o"
-	@echo "... main3test.i"
-	@echo "... main3test.s"
+	@echo "... main2check.o"
+	@echo "... main2check.i"
+	@echo "... main2check.s"
 .PHONY : help
 
 

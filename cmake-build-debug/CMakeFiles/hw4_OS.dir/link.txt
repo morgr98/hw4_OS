@@ -1,1 +1,1 @@
-/usr/bin/c++ -g CMakeFiles/hw4_OS.dir/main3test.cpp.o -o hw4_OS 
+/usr/bin/c++ -g CMakeFiles/hw4_OS.dir/main2check.cpp.o -o hw4_OS 

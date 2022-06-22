@@ -2,6 +2,12 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
+
+#define MMAPTHRESHOLD 131072
+#define ALIGNMENT 8
+#define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~(ALIGNMENT-1))
+
 
 typedef struct MallocMetadata_t MallocMetadata;
 
@@ -17,6 +23,7 @@ struct MallocMetadata_t{
     MallocMetadata_t* next;
     MallocMetadata_t* prev;
     FreeNode free_node;
+    void* for_allign;
 };
 
 size_t global_num_free_blocks = 0;
@@ -33,8 +40,12 @@ size_t global_size_meta_data = sizeof(MallocMetadata);
 FreeNode* free_list = NULL;
 MallocMetadata* allocated_list = NULL;
 
+MallocMetadata* mmap_allocated_list = NULL;
+
+//aligning beginning and size
 static MallocMetadata* addBlock(MallocMetadata* last_alloced, size_t size)
 {
+    size = ALIGN(size);
     MallocMetadata* new_block;
     void* p_ret = sbrk(size+global_size_meta_data);
     if(p_ret == (void*)(-1))
@@ -180,12 +191,50 @@ static MallocMetadata* splitBlocks(FreeNode* node_to_split , size_t size)
     return reuse_block;
 }
 
+static void* mallocMmap(size_t size)
+{
+    MallocMetadata* new_block;
+    void* p_ret = mmap(NULL, size+global_size_meta_data, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if(p_ret == (void*)(-1))
+        return NULL;
+    new_block = (MallocMetadata*)p_ret;
+    //addidng to the head of the list
+    new_block->next = mmap_allocated_list;
+    if (mmap_allocated_list!=NULL)
+    {
+        mmap_allocated_list->prev = new_block;
+    }
+    mmap_allocated_list = new_block;
+    new_block->size = size;
+    new_block->is_free = false;
+    global_num_allocated_blocks++;
+    global_num_allocated_bytes+=size;
+    global_num_meta_data_bytes+=global_size_meta_data;
+    return (void*)(new_block+1);
+}
+static void freeMunmap(void* p, MallocMetadata* meta_data)
+{
+    size_t size = meta_data->size;
+    if(meta_data==mmap_allocated_list)
+        mmap_allocated_list = meta_data->next;
+    if(meta_data->prev != NULL)
+        meta_data->prev->next = meta_data->next;
+    if (meta_data->next != NULL)
+        meta_data->next->prev = meta_data->prev;
+    if(munmap(meta_data, size + global_size_meta_data)!=0)
+        return;
+    global_num_allocated_blocks--;
+    global_num_allocated_bytes-=size;
+    global_num_meta_data_bytes-=global_size_meta_data;
+
+}
 void* smalloc(size_t size)
 {
 
     if((size <= 0) || size > 100000000 )
         return NULL;
-
+    if (size > MMAPTHRESHOLD)
+        return mallocMmap(size);
     MallocMetadata* last_alloced_block = NULL;
     FreeNode* last_free_block = NULL;
     FreeNode* reuse_block = findFreeBlockBySize(size, &last_free_block);
@@ -193,6 +242,7 @@ void* smalloc(size_t size)
            MallocMetadata* block_to_use = findFreeBlock(size, &last_alloced_block);
            if(last_alloced_block != NULL && last_alloced_block->is_free)
            {
+               //wilderness
                void* p_ret = sbrk(size - last_alloced_block->size);
                if(p_ret == (void*)(-1))
                    return NULL;
@@ -251,11 +301,16 @@ void sfree(void* p)
     {
         return;
     }
-
     MallocMetadata* meta_data =(MallocMetadata*)(p);
     meta_data = meta_data -1;
-    if(meta_data->is_free == true)
+    if(meta_data->is_free)
     {
+        return;
+    }
+    //if size is bigger then must have come from mmap
+    if(meta_data->size > MMAPTHRESHOLD)
+    {
+        freeMunmap(p, meta_data);
         return;
     }
     meta_data->is_free = true;

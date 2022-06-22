@@ -42,13 +42,15 @@ void test1() {
     void* p2 = smalloc(40);
     void* p3 = smalloc(300);
     void* p4 = smalloc(200);
+    void* p8 = smalloc(MMAPTHRESHOLD + 10);
 
     sfree(p2);
     sfree(p4);
     void* p5 = smalloc(300);
     void* p6 = smalloc(300);
-  //  sfree(p2);
-  //  sfree(p1);
+    sfree(p8);
+    sfree(p2);
+    sfree(p1);
     print();
 }
 
