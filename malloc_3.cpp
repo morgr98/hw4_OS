@@ -23,7 +23,6 @@ struct MallocMetadata_t{
     MallocMetadata_t* next;
     MallocMetadata_t* prev;
     FreeNode free_node;
-    void* for_allign;
 };
 
 size_t global_num_free_blocks = 0;
@@ -329,11 +328,18 @@ void* srealloc(void* oldp , size_t size)
     }
     MallocMetadata* pointer =(MallocMetadata*)(oldp);
     pointer = pointer -1;
-    if(pointer->size >= size)
+    if(size > MMAPTHRESHOLD) // mmap block
     {
-        return oldp;
+        if(pointer->size == size)
+        {
+            return oldp;
+        }
+    }
+    else { // sbrk block
+
     }
 
+    //basic situation for both cases
     void* newp = smalloc(size);
     if(newp == NULL) {
         return NULL;
