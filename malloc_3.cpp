@@ -3,13 +3,21 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct MallocMetadata_t{
+typedef struct MallocMetadata_t MallocMetadata;
+
+typedef struct freeNode_t{
+    MallocMetadata* meta_data;
+    freeNode_t* next;
+    freeNode_t* prev;
+}FreeNode;
+
+struct MallocMetadata_t{
     size_t size;
     bool is_free;
     MallocMetadata_t* next;
     MallocMetadata_t* prev;
-}MallocMetadata;
-
+    FreeNode free_node;
+};
 
 size_t global_num_free_blocks = 0;
 size_t global_num_free_bytes = 0;
@@ -19,6 +27,10 @@ size_t global_num_meta_data_bytes = 0;
 size_t global_size_meta_data = sizeof(MallocMetadata);
 
 
+
+
+
+FreeNode* free_list = NULL;
 MallocMetadata* allocated_list = NULL;
 
 static MallocMetadata* addBlock(MallocMetadata* last_alloced, size_t size)
@@ -52,6 +64,108 @@ static MallocMetadata* findFreeBlock(size_t size, MallocMetadata** last_alloced)
     }
     return iterator;
 }
+
+static FreeNode * findFreeBlockBySize(size_t size, FreeNode** prev)
+{
+    FreeNode * iterator = free_list;
+    while (iterator!=NULL)
+    {
+        if(iterator->meta_data->size >= size) {
+                return iterator;
+        }
+        *prev = iterator;
+        iterator=iterator->next;
+    }
+    return iterator;
+}
+
+static void removeFromFreeList(FreeNode* node_to_remove) {
+    if (node_to_remove == free_list)
+    {
+        free_list = free_list->next;
+        free_list->prev = NULLb ;
+        return;
+    }
+    if (node_to_remove->prev!=NULL)
+    {
+        node_to_remove->prev->next = node_to_remove->next;
+    }
+    if(node_to_remove->next!=NULL)
+    {
+        node_to_remove->next->prev = node_to_remove->prev;
+    }
+    return;
+}
+
+
+//merge blocks, update free_list(remove merged blocks from it), and update stats, returns meta_data after merging
+static MallocMetadata* mergeBlocks(MallocMetadata* freed_block)
+{
+    if(freed_block->prev!=NULL && freed_block->prev->is_free)
+    {
+        freed_block->prev->next = freed_block->next;
+        if (freed_block->next!= NULL)
+            freed_block->next->prev = freed_block->prev;
+        freed_block->prev->size += (freed_block->size + global_size_meta_data);
+        //remove prev from free list (it is there)
+        removeFromFreeList(&freed_block->prev->free_node);
+        freed_block = freed_block->prev;
+        global_num_free_blocks--;
+    }
+    if(freed_block->next!=NULL && freed_block->next->is_free)
+    {
+        freed_block->size += (freed_block->next->size + global_size_meta_data);
+        removeFromFreeList(&freed_block->next->free_node);
+        freed_block->next = freed_block->next->next;
+        if (freed_block->next != NULL)
+            freed_block->next->prev = freed_block;
+        global_num_free_blocks--;
+    }
+    return freed_block;
+}
+
+static void insertFreeNode(MallocMetadata* freed_block)
+{
+    FreeNode* freenode = &freed_block->free_node;
+
+    FreeNode* node_to_insert_after = NULL;
+    FreeNode* node_to_insert_before = findFreeBlockBySize(freed_block->size, &node_to_insert_after);
+    if (node_to_insert_after == NULL)
+    {
+        freenode->next = free_list;
+        free_list = freenode;
+        return;
+    }
+    node_to_insert_after->next = freenode;
+    if(node_to_insert_before!=NULL)
+        node_to_insert_before->prev = freenode;
+}
+
+
+static MallocMetadata* splitBlocks(FreeNode* node_to_split , size_t size)
+{
+    size_t orginal_size= node_to_split->meta_data->size;
+    MallocMetadata* reuse_block = node_to_split->meta_data;
+    char* unuse_block1 = (char*)reuse_block + size;
+    MallocMetadata* unuse_block = (MallocMetadata*)unuse_block1;
+    reuse_block->size = size;
+    reuse_block->is_free = false;
+    unuse_block->next = reuse_block->next;
+    reuse_block->next = unuse_block;
+
+    unuse_block->size = orginal_size - size - 2*global_size_meta_data;
+    unuse_block->prev = reuse_block;
+    unuse_block->is_free = true;
+
+    removeFromFreeList(node_to_split);
+    insertFreeNode(unuse_block);
+
+    global_num_free_bytes-= reuse_block->size;
+    global_num_allocated_bytes += reuse_block->size;
+    global_num_allocated_blocks++;
+    return reuse_block;
+}
+
 void* smalloc(size_t size)
 {
 
@@ -105,15 +219,17 @@ void sfree(void* p)
         return;
     }
 
-    MallocMetadata* pointer =(MallocMetadata*)(p);
-    pointer = pointer -1;
-    if(pointer->is_free == true)
+    MallocMetadata* meta_data =(MallocMetadata*)(p);
+    meta_data = meta_data -1;
+    if(meta_data->is_free == true)
     {
         return;
     }
-    pointer->is_free = true;
+    meta_data->is_free = true;
+    meta_data = mergeBlocks(meta_data);
+    insertFreeNode(meta_data);
     global_num_free_blocks++;
-    global_num_free_bytes+= pointer->size;
+    global_num_free_bytes+= meta_data->size;
 }
 
 void* srealloc(void* oldp , size_t size)
