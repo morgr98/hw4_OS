@@ -39,16 +39,14 @@ void print(void) {
 void test1() {
     std::cout << "test" << std::endl;
     void* p1 = smalloc(100);
-    void* p2 = smalloc(200);
+    void* p2 = smalloc(40);
     void* p3 = smalloc(300);
-   // void* p4 = smalloc(40);
-   // void* p5;
-   // sfree(p5);
-   // print();
+    void* p4 = smalloc(200);
+
     sfree(p2);
-    void* p4 = smalloc(40);
-    void* p5 = smalloc(200);
-    sfree(p3);
+    sfree(p4);
+    void* p5 = smalloc(300);
+    void* p6 = smalloc(300);
   //  sfree(p2);
   //  sfree(p1);
     print();

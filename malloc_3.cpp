@@ -146,8 +146,11 @@ static void insertFreeNode(MallocMetadata* freed_block)
         return;
     }
     node_to_insert_after->next = freenode;
-    if(node_to_insert_before!=NULL)
+    freenode->prev = node_to_insert_after;
+    if(node_to_insert_before!=NULL) {
         node_to_insert_before->prev = freenode;
+        freenode->next = node_to_insert_before;
+    }
 }
 
 
@@ -188,7 +191,24 @@ void* smalloc(size_t size)
     FreeNode* reuse_block = findFreeBlockBySize(size, &last_free_block);
     if(reuse_block == NULL){
            MallocMetadata* block_to_use = findFreeBlock(size, &last_alloced_block);
-           block_to_use = addBlock(last_alloced_block, size);
+           if(last_alloced_block != NULL && last_alloced_block->is_free)
+           {
+               void* p_ret = sbrk(size - last_alloced_block->size);
+               if(p_ret == (void*)(-1))
+                   return NULL;
+               global_num_free_bytes-= last_alloced_block->size;
+               global_num_allocated_bytes+= size - last_alloced_block->size;
+               global_num_free_blocks--;
+
+               last_alloced_block->size = size;
+               last_alloced_block->is_free = false;
+               removeFromFreeList(&last_alloced_block->free_node);
+
+
+               return (void*)(last_alloced_block+1);
+           }
+           else
+                block_to_use = addBlock(last_alloced_block, size);
         return (void*)(block_to_use+1); // not found empty space = add block and return
     }
     else {// found empty space
@@ -209,6 +229,8 @@ void* smalloc(size_t size)
     }
 
 }
+
+
 
 void* scalloc(size_t num, size_t size)
 {
