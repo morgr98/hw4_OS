@@ -166,7 +166,7 @@ CMakeFiles/hw4_OS.dir/main2check.cpp.o: ../main2check.cpp \
   /usr/include/c++/7/bits/ostream.tcc \
   /usr/include/c++/7/istream \
   /usr/include/c++/7/bits/istream.tcc \
-  ../malloc_3.cpp \
+  ../malloc_2.cpp \
   /usr/include/unistd.h \
   /usr/include/x86_64-linux-gnu/bits/posix_opt.h \
   /usr/include/x86_64-linux-gnu/bits/environments.h \
@@ -174,24 +174,14 @@ CMakeFiles/hw4_OS.dir/main2check.cpp.o: ../main2check.cpp \
   /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
   /usr/include/string.h \
-  /usr/include/strings.h \
-  /usr/include/x86_64-linux-gnu/sys/mman.h \
-  /usr/include/x86_64-linux-gnu/bits/mman.h \
-  /usr/include/x86_64-linux-gnu/bits/mman-linux.h \
-  /usr/include/x86_64-linux-gnu/bits/mman-shared.h
+  /usr/include/strings.h
 
-
-/usr/include/x86_64-linux-gnu/bits/mman-shared.h:
-
-/usr/include/x86_64-linux-gnu/bits/mman-linux.h:
 
 /usr/include/strings.h:
 
 /usr/include/string.h:
 
 /usr/include/x86_64-linux-gnu/bits/getopt_posix.h:
-
-../malloc_3.cpp:
 
 /usr/include/c++/7/bits/istream.tcc:
 
@@ -237,6 +227,8 @@ CMakeFiles/hw4_OS.dir/main2check.cpp.o: ../main2check.cpp \
 
 /usr/include/x86_64-linux-gnu/sys/sysmacros.h:
 
+../malloc_2.cpp:
+
 /usr/include/x86_64-linux-gnu/bits/types/sigset_t.h:
 
 /usr/include/c++/7/cwctype:
@@ -274,8 +266,6 @@ CMakeFiles/hw4_OS.dir/main2check.cpp.o: ../main2check.cpp \
 /usr/include/wctype.h:
 
 /usr/include/c++/7/string:
-
-/usr/include/x86_64-linux-gnu/bits/mman.h:
 
 /usr/include/asm-generic/errno-base.h:
 
@@ -364,8 +354,6 @@ CMakeFiles/hw4_OS.dir/main2check.cpp.o: ../main2check.cpp \
 /usr/include/c++/7/iosfwd:
 
 /usr/include/c++/7/iostream:
-
-/usr/include/x86_64-linux-gnu/sys/mman.h:
 
 /usr/include/c++/7/bits/alloc_traits.h:
 

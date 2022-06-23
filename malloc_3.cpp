@@ -119,6 +119,7 @@ static MallocMetadata* mergeBlocks(MallocMetadata* freed_block)
         if (freed_block->next!= NULL)
             freed_block->next->prev = freed_block->prev;
         global_num_free_blocks--;
+        global_num_allocated_blocks--;
         freed_block->prev->size += (freed_block->size + global_size_meta_data);
         //remove prev from free list (it is there)
         removeFromFreeList(&freed_block->prev->free_node);
@@ -133,6 +134,7 @@ static MallocMetadata* mergeBlocks(MallocMetadata* freed_block)
         if (freed_block->next != NULL)
             freed_block->next->prev = freed_block;
         global_num_free_blocks--;
+        global_num_allocated_blocks--;
         count ++;
     }
     global_num_free_bytes += orginal_size + count*global_size_meta_data;
@@ -318,6 +320,69 @@ void sfree(void* p)
     global_num_free_blocks++;
 }
 
+static MallocMetadata* splitBlocksRealloc(MallocMetadata* oldp , size_t size)
+{
+    size_t orginal_size= oldp->size;
+    MallocMetadata* reuse_block = oldp;
+    char* unuse_block1 = (char*)reuse_block + size + global_size_meta_data;
+    MallocMetadata* unuse_block = (MallocMetadata*)unuse_block1;
+    reuse_block->size = size;
+    unuse_block->next = reuse_block->next;
+    reuse_block->next->prev = unuse_block;
+    reuse_block->next = unuse_block;
+
+    unuse_block->size = orginal_size - size - global_size_meta_data;
+    unuse_block->prev = reuse_block;
+    unuse_block->is_free = true;
+
+    insertFreeNode(unuse_block);
+
+    global_num_free_bytes-= (reuse_block->size + global_size_meta_data);
+    global_num_allocated_bytes -= global_size_meta_data;
+    global_num_allocated_blocks++;
+    global_num_meta_data_bytes+=global_size_meta_data;
+
+    return unuse_block;// return the split free block
+}
+
+static MallocMetadata* mergeLowerBlocksRealloc(MallocMetadata* current , size_t size)
+{
+    current->prev->next = current->next;
+    if (current->next!= NULL)
+        current->next->prev = current->prev;
+    global_num_free_blocks--;
+    global_num_allocated_blocks--;
+    current->prev->size += (current->size + global_size_meta_data);
+    //remove prev from free list (it is there)
+    removeFromFreeList(&current->prev->free_node);
+
+
+    global_num_free_bytes -=  (current->prev->size - size);
+    global_num_meta_data_bytes-= global_size_meta_data;
+    global_num_allocated_bytes+= global_size_meta_data;
+
+    current = current->prev;
+    return current;
+}
+
+static MallocMetadata* mergeHigherBlocksRealloc(MallocMetadata* current , size_t size)
+{
+    current->size += (current->next->size + global_size_meta_data);
+    removeFromFreeList(&current->next->free_node);
+    current->next = current->next->next;
+    if (current->next != NULL)
+        current->next->prev = current;
+
+    global_num_free_blocks--;
+    global_num_allocated_blocks--;
+
+    global_num_free_bytes -= current->next->size ;
+    global_num_meta_data_bytes-= global_size_meta_data;
+    global_num_allocated_bytes+= global_size_meta_data;
+
+    return current;
+}
+
 void* srealloc(void* oldp , size_t size)
 {
     if(size <= 0 || size > 100000000)
@@ -328,6 +393,7 @@ void* srealloc(void* oldp , size_t size)
     }
     MallocMetadata* pointer =(MallocMetadata*)(oldp);
     pointer = pointer -1;
+    int orginal_size = pointer->size;
     if(size > MMAPTHRESHOLD) // mmap block
     {
         if(pointer->size == size)
@@ -336,8 +402,103 @@ void* srealloc(void* oldp , size_t size)
         }
     }
     else { // sbrk block
+        if(pointer->size > size) // reuse the current block  a-scection
+        {
+            if(pointer->size - 128 > size )//can make split
+            {
+                MallocMetadata* split_block_free = splitBlocksRealloc(pointer , size);
+                sfree((void*)(split_block_free+1)); // free the split block - insert the list, symbol and merge if can
+            }
+            return oldp;
+        }
+        MallocMetadata* last_alloced_block = NULL; // in order the section with the wild chunk
+        findFreeBlock(size, &last_alloced_block);
+        if(pointer->prev != NULL && pointer->prev->is_free) // merge with the lower adress b-section
+        {
+            if(pointer->prev->size + pointer->size > size) // if we can merge
+            {// first case
+                MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
+                if (newp->size - 128 > size)//can make split
+                {
+                    MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
+                    sfree((void *) (split_block_free + 1));
+                }
+                memmove(newp, oldp, orginal_size);
+                return (void *) (newp + 1);
+            }
+            if(last_alloced_block == oldp) // if the block is the wilderness chunk
+            {// second case
+                MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size); // mergre with the lower adress
+                void* p_ret = sbrk(size - newp->size);
+                if(p_ret == (void*)(-1))
+                    return NULL;
+                global_num_allocated_bytes+= size - newp->size;
+                newp->size = size;
+                memmove(newp, oldp, orginal_size);
+                return (void *) (newp + 1);
+            }
+        }
+        if(last_alloced_block == oldp) // if the block is the wilderness chunk c-section
+        {
+            void* p_ret = sbrk(size - pointer->size);
+            if(p_ret == (void*)(-1))
+                return NULL;
+            global_num_allocated_bytes+= size - pointer->size;
+            pointer->size = size;
+            return oldp;
+        }
+        if(pointer->next != NULL && pointer->next->is_free) // merge with the higher adress d-section
+        {
+            if(pointer->next->size + pointer->size > size) // if we can merge
+            {// first case
+                MallocMetadata *newp = mergeHigherBlocksRealloc(pointer, size);
+                if (newp->size - 128 > size)//can make split
+                {
+                    MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
+                    sfree((void *) (split_block_free + 1));
+                }
+                memmove(newp, oldp, orginal_size);
+                return (void *) (newp + 1);
+            }
+        }
+        if(pointer->prev != NULL && pointer->prev->is_free && pointer->next != NULL && pointer->next->is_free) // merge both sides e-section
+        {
+            if((pointer->prev->size + pointer->size + pointer->next->size) > size)
+            {
+                MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
+                newp = mergeHigherBlocksRealloc(newp, size);
+                if (newp->size - 128 > size)//can make split
+                {
+                    MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
+                    sfree((void *) (split_block_free + 1));
+                }
+                memmove(newp, oldp, orginal_size);
+                return (void *) (newp + 1);
+            }
+        }
+        if(pointer->next != NULL && pointer->next->is_free && pointer->next == last_alloced_block)// section f
+        {// e doenst work so we have to enlarge the chunk block
+            MallocMetadata *newp;
+            if(pointer->prev!= NULL && pointer->prev->is_free)// also the lower adress is freed
+            {
+                newp = mergeLowerBlocksRealloc(pointer, size);
+                newp = mergeHigherBlocksRealloc(newp, size);// merge both blocks
+            }
+            else
+            {// only merge with the high adress
+                newp = mergeHigherBlocksRealloc(pointer, size);
+            }
+            void* p_ret = sbrk(size - newp->size);
+            if(p_ret == (void*)(-1))
+                return NULL;
 
+            global_num_allocated_bytes+= size - newp->size;
+            newp->size = size;
+            memmove(newp, oldp, orginal_size);
+            return (void *) (newp + 1);
+        }
     }
+
 
     //basic situation for both cases
     void* newp = smalloc(size);
