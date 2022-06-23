@@ -4,7 +4,7 @@
 #include <string.h>
 #include <sys/mman.h>
 
-#define MMAPTHRESHOLD 131072
+#define MMAPTHRESHOLD 131071
 #define ALIGNMENT 8
 #define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~(ALIGNMENT-1))
 
@@ -236,6 +236,7 @@ void* smalloc(size_t size)
         return NULL;
     if (size > MMAPTHRESHOLD)
         return mallocMmap(size);
+    size = ALIGN(size);
     MallocMetadata* last_alloced_block = NULL;
     FreeNode* last_free_block = NULL;
     FreeNode* reuse_block = findFreeBlockBySize(size, &last_free_block);
@@ -263,7 +264,7 @@ void* smalloc(size_t size)
         return (void*)(block_to_use+1); // not found empty space = add block and return
     }
     else {// found empty space
-        if(reuse_block->meta_data->size - 128 < size) // cant make split
+        if((int)reuse_block->meta_data->size - 128 < (int)size) // cant make split
         {
             global_num_free_blocks--;
             global_num_free_bytes-= reuse_block->meta_data->size;
@@ -404,7 +405,7 @@ void* srealloc(void* oldp , size_t size)
     else { // sbrk block
         if(pointer->size > size) // reuse the current block  a-scection
         {
-            if(pointer->size - 128 > size )//can make split
+            if((int)pointer->size - 128 > (int)size )//can make split
             {
                 MallocMetadata* split_block_free = splitBlocksRealloc(pointer , size);
                 sfree((void*)(split_block_free+1)); // free the split block - insert the list, symbol and merge if can
@@ -418,7 +419,7 @@ void* srealloc(void* oldp , size_t size)
             if(pointer->prev->size + pointer->size > size) // if we can merge
             {// first case
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
-                if (newp->size - 128 > size)//can make split
+                if ((int)newp->size - 128 > (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
@@ -452,7 +453,7 @@ void* srealloc(void* oldp , size_t size)
             if(pointer->next->size + pointer->size > size) // if we can merge
             {// first case
                 MallocMetadata *newp = mergeHigherBlocksRealloc(pointer, size);
-                if (newp->size - 128 > size)//can make split
+                if ((int)newp->size - 128 > (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
@@ -467,7 +468,7 @@ void* srealloc(void* oldp , size_t size)
             {
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
                 newp = mergeHigherBlocksRealloc(newp, size);
-                if (newp->size - 128 > size)//can make split
+                if ((int)newp->size - 128 > (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
