@@ -81,7 +81,7 @@ static FreeNode * findFreeBlockBySize(size_t size, FreeNode** prev)
     while (iterator!=NULL)
     {
         if(iterator->meta_data->size >= size) {
-                return iterator;
+            return iterator;
         }
         *prev = iterator;
         iterator=iterator->next;
@@ -94,7 +94,7 @@ static void removeFromFreeList(FreeNode* node_to_remove) {
     {
         free_list = free_list->next;
         if(free_list != NULL)
-          free_list->prev = NULL;
+            free_list->prev = NULL;
         return;
     }
     if (node_to_remove->prev!=NULL)
@@ -153,7 +153,7 @@ static void insertFreeNode(MallocMetadata* freed_block)
     FreeNode* node_to_insert_before = findFreeBlockBySize(freed_block->size, &node_to_insert_after);
     if (node_to_insert_after == NULL)
     {
-       // freenode->next = free_list;
+        // freenode->next = free_list;
         free_list = freenode ;
         return;
     }
@@ -192,10 +192,14 @@ static MallocMetadata* splitBlocks(FreeNode* node_to_split , size_t size)
     return reuse_block;
 }
 
-static void* mallocMmap(size_t size)
+static void* mallocMmap(size_t size, bool hugeTLB)
 {
     MallocMetadata* new_block;
-    void* p_ret = mmap(NULL, size+global_size_meta_data, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void* p_ret;
+    if (hugeTLB)
+        p_ret =  mmap(NULL, size+global_size_meta_data, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+    else
+        p_ret = mmap(NULL, size+global_size_meta_data, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if(p_ret == (void*)(-1))
         return NULL;
     new_block = (MallocMetadata*)p_ret;
@@ -235,32 +239,32 @@ void* smalloc(size_t size)
     if((size <= 0) || size > 100000000 )
         return NULL;
     if (size > MMAPTHRESHOLD)
-        return mallocMmap(size);
+        return mallocMmap(size, size > 4000000);
     size = ALIGN(size);
     MallocMetadata* last_alloced_block = NULL;
     FreeNode* last_free_block = NULL;
     FreeNode* reuse_block = findFreeBlockBySize(size, &last_free_block);
     if(reuse_block == NULL){
-           MallocMetadata* block_to_use = findFreeBlock(size, &last_alloced_block);
-           if(last_alloced_block != NULL && last_alloced_block->is_free)
-           {
-               //wilderness
-               void* p_ret = sbrk(size - last_alloced_block->size);
-               if(p_ret == (void*)(-1))
-                   return NULL;
-               global_num_free_bytes-= last_alloced_block->size;
-               global_num_allocated_bytes+= size - last_alloced_block->size;
-               global_num_free_blocks--;
+        MallocMetadata* block_to_use = findFreeBlock(size, &last_alloced_block);
+        if(last_alloced_block != NULL && last_alloced_block->is_free)
+        {
+            //wilderness
+            void* p_ret = sbrk(size - last_alloced_block->size);
+            if(p_ret == (void*)(-1))
+                return NULL;
+            global_num_free_bytes-= last_alloced_block->size;
+            global_num_allocated_bytes+= size - last_alloced_block->size;
+            global_num_free_blocks--;
 
-               last_alloced_block->size = size;
-               last_alloced_block->is_free = false;
-               removeFromFreeList(&last_alloced_block->free_node);
+            last_alloced_block->size = size;
+            last_alloced_block->is_free = false;
+            removeFromFreeList(&last_alloced_block->free_node);
 
 
-               return (void*)(last_alloced_block+1);
-           }
-           else
-                block_to_use = addBlock(last_alloced_block, size);
+            return (void*)(last_alloced_block+1);
+        }
+        else
+            block_to_use = addBlock(last_alloced_block, size);
         return (void*)(block_to_use+1); // not found empty space = add block and return
     }
     else {// found empty space
@@ -291,8 +295,15 @@ void* scalloc(size_t num, size_t size)
     size_t total_size= size*num;
     if(total_size > 10000000)
         return NULL;
-    void* ret_pointer = smalloc(total_size);
-    if (ret_pointer!=NULL)
+    void* ret_pointer;
+    //check if needs hugeTLB
+    if (size>2000000)
+        ret_pointer = mallocMmap(total_size, true);
+    else if (total_size>MMAPTHRESHOLD)
+        ret_pointer = mallocMmap(total_size, false);
+    else
+        ret_pointer = smalloc(total_size);
+    if(ret_pointer!= NULL)
         memset(ret_pointer, 0, total_size);
     return ret_pointer;
 
