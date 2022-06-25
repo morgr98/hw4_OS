@@ -95,6 +95,8 @@ static void removeFromFreeList(FreeNode* node_to_remove) {
         free_list = free_list->next;
         if(free_list != NULL)
           free_list->prev = NULL;
+        node_to_remove->next = NULL;
+        node_to_remove->prev = NULL;
         return;
     }
     if (node_to_remove->prev!=NULL)
@@ -105,6 +107,8 @@ static void removeFromFreeList(FreeNode* node_to_remove) {
     {
         node_to_remove->next->prev = node_to_remove->prev;
     }
+    node_to_remove->next = NULL;
+    node_to_remove->prev = NULL;
     return;
 }
 
@@ -339,7 +343,8 @@ static MallocMetadata* splitBlocksRealloc(MallocMetadata* oldp , size_t size)
     MallocMetadata* unuse_block = (MallocMetadata*)unuse_block1;
     reuse_block->size = size;
     unuse_block->next = reuse_block->next;
-    reuse_block->next->prev = unuse_block;
+    if(reuse_block->next!=NULL)
+        reuse_block->next->prev = unuse_block;
     reuse_block->next = unuse_block;
 
     unuse_block->size = orginal_size - size - global_size_meta_data;
@@ -380,6 +385,7 @@ static MallocMetadata* mergeLowerBlocksRealloc(MallocMetadata* current , size_t 
 
 static MallocMetadata* mergeHigherBlocksRealloc(MallocMetadata* current , size_t size)
 {
+    int orginal_size = current->next->size;
     current->size += (current->next->size + global_size_meta_data);
     removeFromFreeList(&current->next->free_node);
     current->next = current->next->next;
@@ -389,7 +395,7 @@ static MallocMetadata* mergeHigherBlocksRealloc(MallocMetadata* current , size_t
     global_num_free_blocks--;
     global_num_allocated_blocks--;
     current->is_free = false;
-    global_num_free_bytes -= current->next->size ;
+    global_num_free_bytes -= orginal_size;
     global_num_meta_data_bytes-= global_size_meta_data;
     global_num_allocated_bytes+= global_size_meta_data;
 
@@ -436,7 +442,7 @@ void* srealloc(void* oldp , size_t size)
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
                 }
-                memmove(newp, oldp, orginal_size);
+                memmove((void *) (newp + 1), oldp, orginal_size);
                 return (void *) (newp + 1);
             }
             ///gilad: you did == olp, i think it should be pointer, because it is meta_data
@@ -448,7 +454,7 @@ void* srealloc(void* oldp , size_t size)
                     return NULL;
                 global_num_allocated_bytes+= size - newp->size;
                 newp->size = size;
-                memmove(newp, oldp, orginal_size);
+                memmove((void *) (newp + 1), oldp, orginal_size);
                 return (void *) (newp + 1);
             }
         }
@@ -472,7 +478,7 @@ void* srealloc(void* oldp , size_t size)
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
                 }
-                memmove(newp, oldp, orginal_size);
+                memmove((void *) (newp + 1), oldp, orginal_size);
                 return (void *) (newp + 1);
             }
         }
@@ -487,7 +493,7 @@ void* srealloc(void* oldp , size_t size)
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
                 }
-                memmove(newp, oldp, orginal_size);
+                memmove((void *) (newp + 1), oldp, orginal_size);
                 return (void *) (newp + 1);
             }
         }
@@ -509,7 +515,7 @@ void* srealloc(void* oldp , size_t size)
 
             global_num_allocated_bytes+= size - newp->size;
             newp->size = size;
-            memmove(newp, oldp, orginal_size);
+            memmove((void *) (newp + 1), oldp, orginal_size);
             return (void *) (newp + 1);
         }
     }
