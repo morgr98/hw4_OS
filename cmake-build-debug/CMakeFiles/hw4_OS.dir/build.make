@@ -69,28 +69,28 @@ include CMakeFiles/hw4_OS.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/hw4_OS.dir/flags.make
 
-CMakeFiles/hw4_OS.dir/main4check.cpp.o: CMakeFiles/hw4_OS.dir/flags.make
-CMakeFiles/hw4_OS.dir/main4check.cpp.o: ../main4check.cpp
-CMakeFiles/hw4_OS.dir/main4check.cpp.o: CMakeFiles/hw4_OS.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/student/CLionProjects/hw4_OS/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/hw4_OS.dir/main4check.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/hw4_OS.dir/main4check.cpp.o -MF CMakeFiles/hw4_OS.dir/main4check.cpp.o.d -o CMakeFiles/hw4_OS.dir/main4check.cpp.o -c /home/student/CLionProjects/hw4_OS/main4check.cpp
+CMakeFiles/hw4_OS.dir/main2test.cpp.o: CMakeFiles/hw4_OS.dir/flags.make
+CMakeFiles/hw4_OS.dir/main2test.cpp.o: ../main2test.cpp
+CMakeFiles/hw4_OS.dir/main2test.cpp.o: CMakeFiles/hw4_OS.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/student/CLionProjects/hw4_OS/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/hw4_OS.dir/main2test.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/hw4_OS.dir/main2test.cpp.o -MF CMakeFiles/hw4_OS.dir/main2test.cpp.o.d -o CMakeFiles/hw4_OS.dir/main2test.cpp.o -c /home/student/CLionProjects/hw4_OS/main2test.cpp
 
-CMakeFiles/hw4_OS.dir/main4check.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hw4_OS.dir/main4check.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/student/CLionProjects/hw4_OS/main4check.cpp > CMakeFiles/hw4_OS.dir/main4check.cpp.i
+CMakeFiles/hw4_OS.dir/main2test.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/hw4_OS.dir/main2test.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/student/CLionProjects/hw4_OS/main2test.cpp > CMakeFiles/hw4_OS.dir/main2test.cpp.i
 
-CMakeFiles/hw4_OS.dir/main4check.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hw4_OS.dir/main4check.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/student/CLionProjects/hw4_OS/main4check.cpp -o CMakeFiles/hw4_OS.dir/main4check.cpp.s
+CMakeFiles/hw4_OS.dir/main2test.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/hw4_OS.dir/main2test.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/student/CLionProjects/hw4_OS/main2test.cpp -o CMakeFiles/hw4_OS.dir/main2test.cpp.s
 
 # Object files for target hw4_OS
 hw4_OS_OBJECTS = \
-"CMakeFiles/hw4_OS.dir/main4check.cpp.o"
+"CMakeFiles/hw4_OS.dir/main2test.cpp.o"
 
 # External object files for target hw4_OS
 hw4_OS_EXTERNAL_OBJECTS =
 
-hw4_OS: CMakeFiles/hw4_OS.dir/main4check.cpp.o
+hw4_OS: CMakeFiles/hw4_OS.dir/main2test.cpp.o
 hw4_OS: CMakeFiles/hw4_OS.dir/build.make
 hw4_OS: CMakeFiles/hw4_OS.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/student/CLionProjects/hw4_OS/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable hw4_OS"

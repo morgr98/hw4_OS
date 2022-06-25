@@ -4,4 +4,4 @@ project(hw4_OS)
 set(CMAKE_CXX_STANDARD 14)
 
 add_executable(hw4_OS
-         main4check.cpp)
+         main2test.cpp)

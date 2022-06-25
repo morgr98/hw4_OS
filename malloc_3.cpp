@@ -167,8 +167,8 @@ static void insertFreeNode(MallocMetadata* freed_block)
     freenode->prev = node_to_insert_after;
     if(node_to_insert_before!=NULL) {
         node_to_insert_before->prev = freenode;
-        freenode->next = node_to_insert_before;
     }
+    freenode->next = node_to_insert_before;
 }
 
 
@@ -181,7 +181,9 @@ static MallocMetadata* splitBlocks(FreeNode* node_to_split , size_t size)
     reuse_block->size = size;
     reuse_block->is_free = false;
     unuse_block->next = reuse_block->next;
-    reuse_block->next->prev = unuse_block;
+    ///gilad: should check NULL
+    if(reuse_block->next!=NULL)
+        reuse_block->next->prev = unuse_block;
     reuse_block->next = unuse_block;
 
     unuse_block->size = orginal_size - size - global_size_meta_data;
@@ -270,7 +272,8 @@ void* smalloc(size_t size)
         return (void*)(block_to_use+1); // not found empty space = add block and return
     }
     else {// found empty space
-        if((int)reuse_block->meta_data->size - 128 < (int)size) // cant make split
+        ///gilad: why (int)?
+        if((int)reuse_block->meta_data->size - 128 - global_size_meta_data < (int)size) // cant make split
         {
             global_num_free_blocks--;
             global_num_free_bytes-= reuse_block->meta_data->size;
@@ -364,9 +367,10 @@ static MallocMetadata* mergeLowerBlocksRealloc(MallocMetadata* current , size_t 
     current->prev->size += (current->size + global_size_meta_data);
     //remove prev from free list (it is there)
     removeFromFreeList(&current->prev->free_node);
-
-    current->is_free = false;
-    global_num_free_bytes -=  (current->prev->size - size);
+    ///gilad: i think is should be current->prev, current is already false (there was a problem when it merged and with current_prev even though it wasnt)
+    current->prev->is_free = false;
+    ///gilad: fixed sizes here
+    global_num_free_bytes -=  (current->prev->size - current->size - global_size_meta_data);
     global_num_meta_data_bytes-= global_size_meta_data;
     global_num_allocated_bytes+= global_size_meta_data;
 
@@ -413,7 +417,7 @@ void* srealloc(void* oldp , size_t size)
     else { // sbrk block
         if(pointer->size > size) // reuse the current block  a-scection
         {
-            if((int)pointer->size - 128 > (int)size )//can make split
+            if((int)pointer->size - 128 - global_size_meta_data > (int)size )//can make split
             {
                 MallocMetadata* split_block_free = splitBlocksRealloc(pointer , size);
                 sfree((void*)(split_block_free+1)); // free the split block - insert the list, symbol and merge if can
@@ -427,7 +431,7 @@ void* srealloc(void* oldp , size_t size)
             if(pointer->prev->size + pointer->size > size) // if we can merge
             {// first case
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
-                if ((int)newp->size - 128 > (int)size)//can make split
+                if ((int)newp->size - 128  - global_size_meta_data > (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
@@ -435,7 +439,8 @@ void* srealloc(void* oldp , size_t size)
                 memmove(newp, oldp, orginal_size);
                 return (void *) (newp + 1);
             }
-            if(last_alloced_block == oldp) // if the block is the wilderness chunk
+            ///gilad: you did == olp, i think it should be pointer, because it is meta_data
+            if(last_alloced_block == pointer) // if the block is the wilderness chunk
             {// second case
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size); // mergre with the lower adress
                 void* p_ret = sbrk(size - newp->size);
@@ -447,7 +452,8 @@ void* srealloc(void* oldp , size_t size)
                 return (void *) (newp + 1);
             }
         }
-        if(last_alloced_block == oldp) // if the block is the wilderness chunk c-section
+        ///gilad: same
+        if(last_alloced_block == pointer) // if the block is the wilderness chunk c-section
         {
             void* p_ret = sbrk(size - pointer->size);
             if(p_ret == (void*)(-1))
@@ -461,7 +467,7 @@ void* srealloc(void* oldp , size_t size)
             if(pointer->next->size + pointer->size > size) // if we can merge
             {// first case
                 MallocMetadata *newp = mergeHigherBlocksRealloc(pointer, size);
-                if ((int)newp->size - 128 > (int)size)//can make split
+                if ((int)newp->size - 128 - global_size_meta_data > (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
@@ -476,7 +482,7 @@ void* srealloc(void* oldp , size_t size)
             {
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
                 newp = mergeHigherBlocksRealloc(newp, size);
-                if ((int)newp->size - 128 > (int)size)//can make split
+                if ((int)newp->size - 128 - global_size_meta_data > (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));

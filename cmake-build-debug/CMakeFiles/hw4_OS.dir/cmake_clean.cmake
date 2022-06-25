@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/hw4_OS.dir/main4check.cpp.o"
-  "CMakeFiles/hw4_OS.dir/main4check.cpp.o.d"
+  "CMakeFiles/hw4_OS.dir/main2test.cpp.o"
+  "CMakeFiles/hw4_OS.dir/main2test.cpp.o.d"
   "hw4_OS"
   "hw4_OS.pdb"
 )
