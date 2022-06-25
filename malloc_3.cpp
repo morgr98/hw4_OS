@@ -154,7 +154,13 @@ static void insertFreeNode(MallocMetadata* freed_block)
     if (node_to_insert_after == NULL)
     {
        // freenode->next = free_list;
-        free_list = freenode ;
+       if(node_to_insert_before == NULL) {
+           free_list = freenode;
+           return;
+       }
+        node_to_insert_before->prev = freenode;
+        freenode->next = node_to_insert_before;
+        free_list = freenode;
         return;
     }
     node_to_insert_after->next = freenode;
@@ -334,13 +340,14 @@ static MallocMetadata* splitBlocksRealloc(MallocMetadata* oldp , size_t size)
 
     unuse_block->size = orginal_size - size - global_size_meta_data;
     unuse_block->prev = reuse_block;
-    unuse_block->is_free = true;
+  //  unuse_block->is_free = true;
 
-    insertFreeNode(unuse_block);
+   // insertFreeNode(unuse_block);
 
-    global_num_free_bytes-= (reuse_block->size + global_size_meta_data);
+    //global_num_free_bytes+= unuse_block->size;
     global_num_allocated_bytes -= global_size_meta_data;
     global_num_allocated_blocks++;
+    //global_num_free_blocks++;
     global_num_meta_data_bytes+=global_size_meta_data;
 
     return unuse_block;// return the split free block
@@ -357,7 +364,7 @@ static MallocMetadata* mergeLowerBlocksRealloc(MallocMetadata* current , size_t 
     //remove prev from free list (it is there)
     removeFromFreeList(&current->prev->free_node);
 
-
+    current->is_free = false;
     global_num_free_bytes -=  (current->prev->size - size);
     global_num_meta_data_bytes-= global_size_meta_data;
     global_num_allocated_bytes+= global_size_meta_data;
@@ -376,7 +383,7 @@ static MallocMetadata* mergeHigherBlocksRealloc(MallocMetadata* current , size_t
 
     global_num_free_blocks--;
     global_num_allocated_blocks--;
-
+    current->is_free = false;
     global_num_free_bytes -= current->next->size ;
     global_num_meta_data_bytes-= global_size_meta_data;
     global_num_allocated_bytes+= global_size_meta_data;
