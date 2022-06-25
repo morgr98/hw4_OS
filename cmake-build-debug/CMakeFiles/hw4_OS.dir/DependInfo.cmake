@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/student/CLionProjects/hw4_OS/main2check.cpp" "CMakeFiles/hw4_OS.dir/main2check.cpp.o" "gcc" "CMakeFiles/hw4_OS.dir/main2check.cpp.o.d"
+  "/home/student/CLionProjects/hw4_OS/main4check.cpp" "CMakeFiles/hw4_OS.dir/main4check.cpp.o" "gcc" "CMakeFiles/hw4_OS.dir/main4check.cpp.o.d"
   )
 
 # Targets to which this target links.

@@ -48,10 +48,10 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /snap/clion/193/bin/cmake/linux/bin/cmake
+CMAKE_COMMAND = /snap/clion/198/bin/cmake/linux/bin/cmake
 
 # The command to remove a file.
-RM = /snap/clion/193/bin/cmake/linux/bin/cmake -E rm -f
+RM = /snap/clion/198/bin/cmake/linux/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
@@ -68,7 +68,7 @@ CMAKE_BINARY_DIR = /home/student/CLionProjects/hw4_OS/cmake-build-debug
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/snap/clion/193/bin/cmake/linux/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+	/snap/clion/198/bin/cmake/linux/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
@@ -78,7 +78,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/snap/clion/193/bin/cmake/linux/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	/snap/clion/198/bin/cmake/linux/bin/cmake --regenerate-during-build -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : rebuild_cache
 
 # Special rule for the target rebuild_cache
@@ -129,29 +129,29 @@ hw4_OS/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/build
 .PHONY : hw4_OS/fast
 
-main2check.o: main2check.cpp.o
-.PHONY : main2check.o
+main4check.o: main4check.cpp.o
+.PHONY : main4check.o
 
 # target to build an object file
-main2check.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main2check.cpp.o
-.PHONY : main2check.cpp.o
+main4check.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main4check.cpp.o
+.PHONY : main4check.cpp.o
 
-main2check.i: main2check.cpp.i
-.PHONY : main2check.i
+main4check.i: main4check.cpp.i
+.PHONY : main4check.i
 
 # target to preprocess a source file
-main2check.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main2check.cpp.i
-.PHONY : main2check.cpp.i
+main4check.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main4check.cpp.i
+.PHONY : main4check.cpp.i
 
-main2check.s: main2check.cpp.s
-.PHONY : main2check.s
+main4check.s: main4check.cpp.s
+.PHONY : main4check.s
 
 # target to generate assembly for a file
-main2check.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main2check.cpp.s
-.PHONY : main2check.cpp.s
+main4check.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/hw4_OS.dir/build.make CMakeFiles/hw4_OS.dir/main4check.cpp.s
+.PHONY : main4check.cpp.s
 
 # Help Target
 help:
@@ -162,9 +162,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... hw4_OS"
-	@echo "... main2check.o"
-	@echo "... main2check.i"
-	@echo "... main2check.s"
+	@echo "... main4check.o"
+	@echo "... main4check.i"
+	@echo "... main4check.s"
 .PHONY : help
 
 
