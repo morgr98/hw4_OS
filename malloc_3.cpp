@@ -46,6 +46,13 @@ static MallocMetadata* addBlock(MallocMetadata* last_alloced, size_t size)
 {
     size = ALIGN(size);
     MallocMetadata* new_block;
+    void *base = sbrk(0);
+    if((size_t)base % 8 != 0)
+    {
+
+        sbrk(8 - (size_t(base) % 8));
+
+    }
     void* p_ret = sbrk(size+global_size_meta_data);
     if(p_ret == (void*)(-1))
         return NULL;
@@ -157,15 +164,50 @@ static void insertFreeNode(MallocMetadata* freed_block)
     FreeNode* node_to_insert_before = findFreeBlockBySize(freed_block->size, &node_to_insert_after);
     if (node_to_insert_after == NULL)
     {
-       // freenode->next = free_list;
        if(node_to_insert_before == NULL) {
            free_list = freenode;
            return;
        }
-        node_to_insert_before->prev = freenode;
-        freenode->next = node_to_insert_before;
-        free_list = freenode;
+       if(node_to_insert_before->meta_data->size == freed_block->size && (void*)node_to_insert_before->meta_data < (void*)freed_block)
+       {
+           freenode->prev= node_to_insert_before;
+           freenode->next= node_to_insert_before->next;
+           node_to_insert_before->next = freenode;
+           free_list = node_to_insert_before;
+           while(freenode->next != NULL && freenode->meta_data->size == freenode->next->meta_data->size && (void*)freenode->meta_data > (void*)freenode->next->meta_data)
+           {
+               FreeNode* prev = freenode->prev , *next = freenode->next , *new_next = freenode->next->next;
+               prev->next = next;
+               next->prev = prev;
+               next->next = freenode;
+               freenode->prev = next;
+               freenode->next = new_next;
+               if(new_next != NULL)
+               {
+                   new_next->prev = freenode;
+               }
+           }
+       }
+       else {
+           node_to_insert_before->prev = freenode;
+           freenode->next = node_to_insert_before;
+           free_list = freenode;
+       }
         return;
+    }
+    if(node_to_insert_after->meta_data->size == freed_block->size && (void*)node_to_insert_after->meta_data > (void*)freed_block)
+    {
+        node_to_insert_after= node_to_insert_after->prev;
+        node_to_insert_before= node_to_insert_after->next->next;
+    }
+    else
+    {
+        while(node_to_insert_after->meta_data->size == freed_block->size &&node_to_insert_after->next !=NULL && (void*)node_to_insert_after->next->meta_data < (void*)freed_block )
+        {
+            node_to_insert_after = node_to_insert_after->next;
+            if(node_to_insert_before != NULL)
+                node_to_insert_before = node_to_insert_before->next;
+        }
     }
     node_to_insert_after->next = freenode;
     freenode->prev = node_to_insert_after;
@@ -182,6 +224,7 @@ static MallocMetadata* splitBlocks(FreeNode* node_to_split , size_t size)
     MallocMetadata* reuse_block = node_to_split->meta_data;
     char* unuse_block1 = (char*)reuse_block + size + global_size_meta_data;
     MallocMetadata* unuse_block = (MallocMetadata*)unuse_block1;
+    memset(unuse_block, 0, global_num_meta_data_bytes);
     reuse_block->size = size;
     reuse_block->is_free = false;
     unuse_block->next = reuse_block->next;
@@ -246,9 +289,9 @@ void* smalloc(size_t size)
 
     if((size <= 0) || size > 100000000 )
         return NULL;
+    size = ALIGN(size);
     if (size > MMAPTHRESHOLD)
         return mallocMmap(size);
-    size = ALIGN(size);
     MallocMetadata* last_alloced_block = NULL;
     FreeNode* last_free_block = NULL;
     FreeNode* reuse_block = findFreeBlockBySize(size, &last_free_block);
@@ -277,7 +320,7 @@ void* smalloc(size_t size)
     }
     else {// found empty space
         ///gilad: why (int)?
-        if((int)reuse_block->meta_data->size - 128 - global_size_meta_data < (int)size) // cant make split
+        if((int)reuse_block->meta_data->size - 128 - (int)global_size_meta_data <= (int)size) // cant make split
         {
             global_num_free_blocks--;
             global_num_free_bytes-= reuse_block->meta_data->size;
@@ -302,7 +345,7 @@ void* scalloc(size_t num, size_t size)
     if(size <= 0 || num <= 0)
         return NULL;
     size_t total_size= size*num;
-    if(total_size > 10000000)
+    if(total_size > 100000000)
         return NULL;
     void* ret_pointer = smalloc(total_size);
     if (ret_pointer!=NULL)
@@ -341,6 +384,7 @@ static MallocMetadata* splitBlocksRealloc(MallocMetadata* oldp , size_t size)
     MallocMetadata* reuse_block = oldp;
     char* unuse_block1 = (char*)reuse_block + size + global_size_meta_data;
     MallocMetadata* unuse_block = (MallocMetadata*)unuse_block1;
+    memset(unuse_block, 0, global_num_meta_data_bytes);
     reuse_block->size = size;
     unuse_block->next = reuse_block->next;
     if(reuse_block->next!=NULL)
@@ -421,9 +465,9 @@ void* srealloc(void* oldp , size_t size)
         }
     }
     else { // sbrk block
-        if(pointer->size > size) // reuse the current block  a-scection
+        if(pointer->size >= size) // reuse the current block  a-scection
         {
-            if((int)pointer->size - 128 - global_size_meta_data > (int)size )//can make split
+            if((int)pointer->size - 128 - (int)global_size_meta_data >= (int)size )//can make split
             {
                 MallocMetadata* split_block_free = splitBlocksRealloc(pointer , size);
                 sfree((void*)(split_block_free+1)); // free the split block - insert the list, symbol and merge if can
@@ -434,10 +478,10 @@ void* srealloc(void* oldp , size_t size)
         findFreeBlock(size, &last_alloced_block);
         if(pointer->prev != NULL && pointer->prev->is_free) // merge with the lower adress b-section
         {
-            if(pointer->prev->size + pointer->size > size) // if we can merge
+            if(pointer->prev->size + pointer->size >= size) // if we can merge
             {// first case
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
-                if ((int)newp->size - 128  - global_size_meta_data > (int)size)//can make split
+                if ((int)newp->size - 128  - (int)global_size_meta_data >= (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
@@ -470,10 +514,10 @@ void* srealloc(void* oldp , size_t size)
         }
         if(pointer->next != NULL && pointer->next->is_free) // merge with the higher adress d-section
         {
-            if(pointer->next->size + pointer->size > size) // if we can merge
+            if(pointer->next->size + pointer->size >= size) // if we can merge
             {// first case
                 MallocMetadata *newp = mergeHigherBlocksRealloc(pointer, size);
-                if ((int)newp->size - 128 - global_size_meta_data > (int)size)//can make split
+                if ((int)newp->size - 128 - (int)global_size_meta_data >= (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));
@@ -484,11 +528,11 @@ void* srealloc(void* oldp , size_t size)
         }
         if(pointer->prev != NULL && pointer->prev->is_free && pointer->next != NULL && pointer->next->is_free) // merge both sides e-section
         {
-            if((pointer->prev->size + pointer->size + pointer->next->size) > size)
+            if((pointer->prev->size + pointer->size + pointer->next->size) >= size)
             {
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
                 newp = mergeHigherBlocksRealloc(newp, size);
-                if ((int)newp->size - 128 - global_size_meta_data > (int)size)//can make split
+                if ((int)newp->size - 128 - (int)global_size_meta_data >= (int)size)//can make split
                 {
                     MallocMetadata *split_block_free = splitBlocksRealloc(newp, size);
                     sfree((void *) (split_block_free + 1));

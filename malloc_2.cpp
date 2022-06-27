@@ -77,9 +77,12 @@ void* scalloc(size_t num, size_t size)
     if(size <= 0 || num <= 0)
         return NULL;
     size_t total_size= size*num;
-    if(total_size > 10000000)
-        return NULL;
+    if(total_size > 100000000)
+        return nullptr;
     void* ret_pointer = smalloc(total_size);
+    if(ret_pointer == NULL){
+        return NULL;
+    }
     memset(ret_pointer, 0, total_size);
     return ret_pointer;
 
