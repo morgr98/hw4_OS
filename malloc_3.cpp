@@ -82,6 +82,17 @@ static MallocMetadata* findFreeBlock(size_t size, MallocMetadata** last_alloced)
     return iterator;
 }
 
+static MallocMetadata* lastBlock(MallocMetadata** last_alloced)
+{
+    MallocMetadata* iterator = allocated_list;
+    while (iterator!=NULL)
+    {
+        *last_alloced = iterator;
+        iterator=iterator->next;
+    }
+    return iterator;
+}
+
 static FreeNode * findFreeBlockBySize(size_t size, FreeNode** prev)
 {
     FreeNode * iterator = free_list;
@@ -320,7 +331,7 @@ void* smalloc(size_t size)
     }
     else {// found empty space
         ///gilad: why (int)?
-        if((int)reuse_block->meta_data->size - 128 - (int)global_size_meta_data <= (int)size) // cant make split
+        if((int)reuse_block->meta_data->size - 128 - (int)global_size_meta_data < (int)size) // cant make split
         {
             global_num_free_blocks--;
             global_num_free_bytes-= reuse_block->meta_data->size;
@@ -475,10 +486,10 @@ void* srealloc(void* oldp , size_t size)
             return oldp;
         }
         MallocMetadata* last_alloced_block = NULL; // in order the section with the wild chunk
-        findFreeBlock(size, &last_alloced_block);
+        lastBlock(&last_alloced_block);
         if(pointer->prev != NULL && pointer->prev->is_free) // merge with the lower adress b-section
         {
-            if(pointer->prev->size + pointer->size >= size) // if we can merge
+            if(pointer->prev->size + pointer->size +global_size_meta_data >= size) // if we can merge
             {// first case
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
                 if ((int)newp->size - 128  - (int)global_size_meta_data >= (int)size)//can make split
@@ -514,7 +525,7 @@ void* srealloc(void* oldp , size_t size)
         }
         if(pointer->next != NULL && pointer->next->is_free) // merge with the higher adress d-section
         {
-            if(pointer->next->size + pointer->size >= size) // if we can merge
+            if(pointer->next->size + pointer->size + global_size_meta_data>= size) // if we can merge
             {// first case
                 MallocMetadata *newp = mergeHigherBlocksRealloc(pointer, size);
                 if ((int)newp->size - 128 - (int)global_size_meta_data >= (int)size)//can make split
@@ -528,7 +539,7 @@ void* srealloc(void* oldp , size_t size)
         }
         if(pointer->prev != NULL && pointer->prev->is_free && pointer->next != NULL && pointer->next->is_free) // merge both sides e-section
         {
-            if((pointer->prev->size + pointer->size + pointer->next->size) >= size)
+            if((pointer->prev->size + pointer->size + pointer->next->size + 2*global_size_meta_data) >= size)
             {
                 MallocMetadata *newp = mergeLowerBlocksRealloc(pointer, size);
                 newp = mergeHigherBlocksRealloc(newp, size);
